@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: ./polybot
+    image: app-image:latest
+    ports:
+      - "8443"
+    volumes:
+      - ./polybot:/app
+
+  web:
+    build:
+      context: ./nginx
+    image: web-image:latest
+    ports:
+      - "844:8444"

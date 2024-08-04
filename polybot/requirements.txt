@@ -1,0 +1,6 @@
+flask~=3.0.3
+telebot~=0.0.5
+pillow~=10.3.0
+loguru~=0.7.2
+matplotlib~=3.8.4
+pylint
