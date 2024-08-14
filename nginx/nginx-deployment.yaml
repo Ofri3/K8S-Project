@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3  # Number of replicas for the Nginx deployment
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: ofriz/k8sproject:web-image-latest  # Use the latest Nginx image
+        ports:
+        - containerPort: 8444
+        volumeMounts:
+        - name: static-content
+          mountPath: /usr/share/nginx/html
+        - name: nginx-storage
+          mountPath: /usr/share/nginx/html/storage  # Mount PVC to this path
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8444
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8444
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      imagePullSecrets:
+      - name: regcred
+      volumes:
+      - name: static-content
+        configMap:
+          name: nginx-config  # Reference to a ConfigMap containing static content
+      - name: nginx-storage
+        persistentVolumeClaim:
+          claimName: nginx-pvc  # Reference to the PVC
