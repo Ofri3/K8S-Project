@@ -1,7 +1,22 @@
 @Library('shared-lib') _
 
 pipeline {
-    agent any
+      agent {
+    kubernetes {
+      yaml '''
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
+          - name: jenkins-agent
+            image: jenkins-agent:latest
+            command:
+            - cat
+            tty: true
+        '''
+    }
+  }
+
     options {
         // Keeps builds for the last 30 days.
         buildDiscarder(logRotator(daysToKeepStr: '30'))
@@ -134,45 +149,23 @@ pipeline {
                 }
             }
         }
-        stage('Deployment on EC2') {
+        stage('Deploy with Helm') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                    script {
-                        // Login to Dockerhub private repo
-                        bat """
-                            ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ec2-user@${AWS_ELASTIC_IP} "docker login -u ${USER} -p ${PASS}"
-                        """
+                script {
+                    // Ensure Helm is installed in the pod
+                    bat 'helm version'
 
-                        // Pull the app image from Dockerhub
-                        bat """
-                            ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ec2-user@${AWS_ELASTIC_IP} "docker pull ${DOCKER_REPO}:${APP_IMAGE_NAME}-${env.IMAGE_TAG}"
-                        """
+                    // Set up Kubernetes context for the desired namespace
+                    bat 'kubectl config set-context --current --namespace=demo'
 
-                        // Pull the web image from Dockerhub
-                        bat """
-                            ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ec2-user@${AWS_ELASTIC_IP} "docker pull ${DOCKER_REPO}:${WEB_IMAGE_NAME}-${env.IMAGE_TAG}"
-                        """
-
-                        // Stop the previous my-app-container
-                        bat """
-                            ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ec2-user@${AWS_ELASTIC_IP} "docker stop my-app-container my-web-container"
-                        """
-
-                        // Remove the previous my-app-container
-                        bat """
-                            ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ec2-user@${AWS_ELASTIC_IP} "docker remove -f my-app-container my-web-container"
-                        """
-
-                        // Run the app image at 8443
-                        bat """
-                            ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ec2-user@${AWS_ELASTIC_IP} "docker run -d -p 8443:8443 --name my-app-container -e TELEGRAM_TOKEN=${TELEGRAM_TOKEN} ${DOCKER_REPO}:${APP_IMAGE_NAME}-${env.IMAGE_TAG}"
-                        """
-
-                        // Run the web image at 8444
-                        bat """
-                            ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ec2-user@${AWS_ELASTIC_IP} "docker run -d -p 844:8444 --name my-web-container ${DOCKER_REPO}:${WEB_IMAGE_NAME}-${env.IMAGE_TAG}"
-                        """
-                    }
+                    // Deploy the application using your Helm chart
+                    bat """
+                    helm upgrade --install deploy-demo-0.1.0 ./my-python-app-chart \
+                    --namespace demo \
+                    --set image.repository=${DOCKER_REPO} \
+                    --set image.tag=${GIT_COMMIT} \
+                    --set replicas=3
+                    """
                 }
             }
         }
