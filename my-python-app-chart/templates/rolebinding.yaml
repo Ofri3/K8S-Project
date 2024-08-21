@@ -1,0 +1,12 @@
+kind: RoleBinding
+metadata:
+  name: jenkins-rolebinding
+  namespace: demo
+subjects:
+- kind: ServiceAccount
+  name: jenkins
+  namespace: jenkins
+roleRef:
+  kind: Role
+  name: jenkins-role
+  apiGroup: rbac.authorization.k8s.io
