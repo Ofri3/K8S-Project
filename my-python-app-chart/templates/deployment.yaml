@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "my-python-app.fullname" . }}
+  namespace: {{ .Values.namespace }}  # Pull the namespace from values.yaml
+  labels:
+    app: {{ include "my-python-app.name" . }}
+spec:
+  replicas: {{ .Values.replicaCount }}  # Number of replicas from values.yaml
+  selector:
+    matchLabels:
+      app: {{ include "my-python-app.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "my-python-app.name" . }}
+    spec:
+      containers:
+      - name: my-python-app
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}  # Image and tag from values.yaml
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+          - name: http
+            containerPort: {{ .Values.service.targetPort }}
+            protocol: TCP
