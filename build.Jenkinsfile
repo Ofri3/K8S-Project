@@ -1,5 +1,3 @@
-@Library('shared-lib') _
-
 pipeline {
       agent {
     kubernetes {
@@ -44,12 +42,6 @@ pipeline {
     }
 
     stages {
-        stage('Use Shared Library Code') {
-            steps {
-                // Use the helloWorld function from the shared library
-                helloWorld('DevOps Student')
-            }
-        }
         stage('Checkout and Extract Git Commit Hash') {
             steps {
                 // Checkout code
