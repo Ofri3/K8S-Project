@@ -1,19 +1,20 @@
 pipeline {
-      agent {
-    kubernetes {
-      yaml '''
-        apiVersion: v1
-        kind: Pod
-        spec:
-          containers:
-          - name: jenkins-agent
-            image: jenkins-agent:latest
-            command:
-            - cat
-            tty: true
-        '''
+    agent {
+        kubernetes {
+            yaml '''
+            apiVersion: v1
+            kind: Pod
+            spec:
+              containers:
+              - name: jenkins-agent
+                image: ofriz/k8sproject:jenkins-agent
+                command:
+                - cat
+                tty: true
+            '''
+            defaultContainer 'jnlp'
+        }
     }
-  }
 
     options {
         // Keeps builds for the last 30 days.
@@ -159,31 +160,6 @@ pipeline {
                     --set replicas=3
                     """
                 }
-            }
-        }
-    }
-    post {
-        always {
-            script {
-                // Process the test results using the JUnit plugin.
-                junit 'results.xml'
-
-                // Process the pylint report using the Warnings Plugin
-                recordIssues enabledForFailure: true, aggregatingResults: true
-                recordIssues tools: [pyLint(pattern: 'pylint.log')]
-
-                // Clean up workspace after build
-                cleanWs(cleanWhenNotBuilt: false,
-                        deleteDirs: true,
-                        notFailBuild: true,
-                        patterns: [
-                        [pattern: 'results.xml', type: 'EXCLUDE']
-                ])
-
-                // Clean up unused dangling Docker images
-                bat """
-                    docker image prune -f
-                """
             }
         }
     }
