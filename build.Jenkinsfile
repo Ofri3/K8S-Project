@@ -1,18 +1,20 @@
 pipeline {
     agent {
         kubernetes {
+            label 'jenkins-agent'
+            defaultContainer 'jnlp'
             yaml '''
             apiVersion: v1
             kind: Pod
             spec:
               containers:
-              - name: jenkins-agent
+              - name: jnlp
                 image: ofriz/k8sproject:jenkins-agent
-                command:
-                - cat
-                tty: true
+                alwaysPullImage: true
+                imagePullSecrets:
+                - name: regcred
+                args: ['\${computer.jnlpmac}', '\${computer.name}']
             '''
-            defaultContainer 'jnlp'
         }
     }
 
