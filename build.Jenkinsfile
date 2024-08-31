@@ -1,20 +1,18 @@
 pipeline {
     agent {
+        // Use the Kubernetes pod template for the agent
         kubernetes {
-            label 'jenkins-agent'
-            defaultContainer 'jnlp'
-            yaml '''
-            apiVersion: v1
-            kind: Pod
-            spec:
-              containers:
-              - name: jnlp
-                image: ofriz/k8sproject:jenkins-agent
-                alwaysPullImage: true
-                imagePullSecrets:
-                - name: regcred
-                args: ['\${computer.jnlpmac}', '\${computer.name}']
-            '''
+            // Define the pod template
+            podTemplate(
+                containers: [
+                    containerTemplate(
+                        name: 'jnlp',
+                        image: 'ofriz/k8sproject:jenkins-agent',
+                        args: '${computer.jnlpmac} ${computer.name}'
+                    )
+                ],
+                imagePullSecrets: ['regcred']
+            )
         }
     }
 
