@@ -7,9 +7,10 @@ pipeline {
             kind: Pod
             spec:
               containers:
-              - name: jnlp
+              - name: jenkins-agent-cont
                 image: ofriz/k8sproject:jenkins-agent-latest
-                args: '${computer.jnlpmac} ${computer.name}'
+                command:
+                - cat
                 tty: true
             """
         }
