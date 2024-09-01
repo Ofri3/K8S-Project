@@ -7,7 +7,7 @@ pipeline {
             kind: Pod
             spec:
               containers:
-              - name: jnlp
+              - name: jenkins-agent-cont
                 image: ofriz/k8sproject:jenkins-agent-latest
                 command:
                 - cat
