@@ -5,6 +5,8 @@ metadata:
   namespace: jenkins
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
 spec:
   rules:
   - http:
@@ -16,3 +18,10 @@ spec:
             name: jenkins-service
             port:
               number: 8080
+      - path: /tcpSlaveAgentListener
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: jenkins-service
+            port:
+              number: 50000
