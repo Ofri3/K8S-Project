@@ -23,3 +23,9 @@ spec:
           - name: http
             containerPort: {{ .Values.service.targetPort }}
             protocol: TCP
+        env:
+          - name: TELEGRAM_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: { { .Values.env.TELEGRAM_TOKEN_SECRET } }
+                key: TELEGRAM_TOKEN

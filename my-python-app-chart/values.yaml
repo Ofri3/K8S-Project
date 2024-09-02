@@ -35,3 +35,6 @@ pvc:
   storage: 1Gi
 ingress:
   host: nginx.local
+
+env:
+  TELEGRAM_TOKEN_SECRET: telegram-token-secret
