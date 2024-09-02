@@ -31,13 +31,7 @@ pipeline {
         APP_IMAGE_NAME = 'app-image'
         WEB_IMAGE_NAME = 'web-image'
         DOCKER_COMPOSE_FILE = 'compose.yaml'
-        DOCKER_REPO = 'ofriz/jenkinsproject'
-        NEXUS_REPO = "dockernexus"
-        NEXUS_PROTOCOL = "http"
-        NEXUS_URL = "172.30.134.43:8085"
-        AWS_ELASTIC_IP = '52.58.165.93'
-        SSH_KEY_PATH = 'C:/Users/Ofri/Downloads/aws-open.pem'
-        NEXUS_CREDENTIALS_ID = 'NEXUS_CREDENTIALS_ID'
+        DOCKER_REPO = 'ofriz/k8sproject'
         DOCKERHUB_CREDENTIALS = 'dockerhub'
         SNYK_API_TOKEN = 'SNYK_API_TOKEN'
     }
@@ -120,21 +114,15 @@ pipeline {
             steps {
                 script {
                     withCredentials([
-                        usernamePassword(credentialsId: 'NEXUS_CREDENTIALS_ID', usernameVariable: 'USER', passwordVariable: 'PASS'),
                         usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')
                     ]) {
 
-                    // Login to Dockerhub / Nexus repo ,tag, and push images
+                    // Login to Dockerhub, tag, and push images
                     bat """
                         cd polybot
-                        docker login -u ${USER} -p ${PASS} ${NEXUS_PROTOCOL}://${NEXUS_URL}/repository/${NEXUS_REPO}
                         docker login -u ${USER} -p ${PASS}
-                        docker tag ${APP_IMAGE_NAME}:latest ${NEXUS_URL}/${APP_IMAGE_NAME}:${env.IMAGE_TAG}
-                        docker tag ${WEB_IMAGE_NAME}:latest ${NEXUS_URL}/${WEB_IMAGE_NAME}:${env.IMAGE_TAG}
                         docker tag ${APP_IMAGE_NAME}:latest ${DOCKER_REPO}:${APP_IMAGE_NAME}-${env.IMAGE_TAG}
                         docker tag ${WEB_IMAGE_NAME}:latest ${DOCKER_REPO}:${WEB_IMAGE_NAME}-${env.IMAGE_TAG}
-                        docker push ${NEXUS_URL}/${APP_IMAGE_NAME}:${env.IMAGE_TAG}
-                        docker push ${NEXUS_URL}/${WEB_IMAGE_NAME}:${env.IMAGE_TAG}
                         docker push ${DOCKER_REPO}:${APP_IMAGE_NAME}-${env.IMAGE_TAG}
                         docker push ${DOCKER_REPO}:${WEB_IMAGE_NAME}-${env.IMAGE_TAG}
                     """
@@ -145,19 +133,12 @@ pipeline {
         stage('Deploy with Helm') {
             steps {
                 script {
-                    // Ensure Helm is installed in the pod
-                    bat 'helm version'
-
-                    // Set up Kubernetes context for the desired namespace
-                    bat 'kubectl config set-context --current --namespace=demo'
-
                     // Deploy the application using your Helm chart
                     bat """
-                    helm upgrade --install deploy-demo-0.1.0 ./my-python-app-chart \
+                    helm upgrade --install python-app-0.1.0 ./my-python-app-chart \
                     --namespace demo \
                     --set image.repository=${DOCKER_REPO} \
-                    --set image.tag=${GIT_COMMIT} \
-                    --set replicas=3
+                    --set image.tag=${env.IMAGE_TAG} \
                     """
                 }
             }
