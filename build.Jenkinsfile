@@ -37,11 +37,8 @@ pipeline {
     }
 
     stages {
-        stage('Checkout and Extract Git Commit Hash') {
+        stage('Extract Git Commit Hash') {
             steps {
-                // Checkout code
-                checkout scm
-
                 // Extract Git commit hash
                 script {
                     sh(script: 'git rev-parse --short HEAD > gitCommit.txt')
