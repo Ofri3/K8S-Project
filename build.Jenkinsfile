@@ -44,7 +44,7 @@ pipeline {
 
                 // Extract Git commit hash
                 script {
-                    bat(script: 'git rev-parse --short HEAD > gitCommit.txt')
+                    sh(script: 'git rev-parse --short HEAD > gitCommit.txt')
                     def GITCOMMIT = readFile('gitCommit.txt').trim()
                     env.GIT_TAG = "${GITCOMMIT}"
 
@@ -55,44 +55,36 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                script {
-                    // Build Docker image using docker-compose
-                    bat """
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} build
-                    """
-                }
+                // Build Docker image using docker-compose
+                sh """
+                    docker-compose -f ${DOCKER_COMPOSE_FILE} build
+                """
             }
         }
         stage('Install Python Requirements') {
             steps {
-                script {
-                    // Install Python dependencies
-                    bat """
-                        pip install --upgrade pip
-                        pip install pytest unittest2 pylint flask telebot Pillow loguru matplotlib
-                    """
-                }
+                // Install Python dependencies
+                sh """
+                    pip install --upgrade pip
+                    pip install pytest unittest2 pylint flask telebot Pillow loguru matplotlib
+                """
             }
         }
         stage('Static Code Linting and Unittest') {
             parallel {
                 stage('Static code linting') {
                     steps {
-                        script {
-                            // Run python code analysis
-                            bat """
-                                python -m pylint -f parseable --reports=no polybot/*.py > pylint.log
-                                type pylint.log
-                            """
-                        }
+                        // Run python code analysis
+                        sh """
+                            python -m pylint -f parseable --reports=no polybot/*.py > pylint.log
+                            cat pylint.log
+                        """
                     }
                 }
                 stage('Unittest') {
                     steps {
-                        script {
-                            // Run unittests
-                            bat 'python -m pytest --junitxml results.xml polybot/test'
-                        }
+                        // Run unittests
+                        sh 'python -m pytest --junitxml results.xml polybot/test'
                     }
                 }
             }
@@ -102,7 +94,7 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: 'SNYK_API_TOKEN', variable: 'SNYK_TOKEN')]) {
                         // Scan the image
-                        bat """
+                        sh """
                             snyk auth $SNYK_TOKEN
                             snyk container test ${APP_IMAGE_NAME}:latest --severity-threshold=high || exit 0
                         """
@@ -118,7 +110,7 @@ pipeline {
                     ]) {
 
                     // Login to Dockerhub, tag, and push images
-                    bat """
+                    sh """
                         cd polybot
                         docker login -u ${USER} -p ${PASS}
                         docker tag ${APP_IMAGE_NAME}:latest ${DOCKER_REPO}:${APP_IMAGE_NAME}-${env.IMAGE_TAG}
@@ -132,15 +124,13 @@ pipeline {
         }
         stage('Deploy with Helm') {
             steps {
-                script {
-                    // Deploy the application using your Helm chart
-                    bat """
+                // Deploy the application using your Helm chart
+                sh """
                     helm upgrade --install python-app-0.1.0 ./my-python-app-chart \
                     --namespace demo \
                     --set image.repository=${DOCKER_REPO} \
                     --set image.tag=${env.IMAGE_TAG} \
                     """
-                }
             }
         }
     }
