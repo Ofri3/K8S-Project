@@ -40,7 +40,7 @@ pipeline {
         stage('Checkout and Extract Git Commit Hash') {
             steps {
                 // Checkout code
-                checkout scm
+                git branch: 'master', url: 'https://github.com/Ofri3/K8S-Project'
 
                 // Extract Git commit hash
                 script {
