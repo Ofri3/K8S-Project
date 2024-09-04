@@ -9,6 +9,9 @@ pipeline {
               containers:
               - name: jenkins-agent-cont
                 image: ofriz/k8sproject:jenkins-agent-latest
+                securityContext:
+                  privileged: true       # Enable privileged mode for Docker
+                  runAsUser: 0           # Run as root user to access Docker socket
                 command:
                 - cat
                 tty: true
@@ -51,7 +54,7 @@ pipeline {
             }
         }
         stage('Build Docker Image') {
-                steps {
+            steps {
                     // Ensure Docker commands run in the jenkins-agent container
                     container('jenkins-agent-cont') {
                     // Build Docker image using docker-compose
