@@ -7,7 +7,7 @@ pipeline {
             spec:
               containers:
               - name: jenkins-agent-cont
-                image: image: ofriz/k8sproject:jenkins-agent-latest
+                image: ofriz/k8sproject:jenkins-agent-latest
                 securityContext:
                   privileged: true       # Enable privileged mode for Docker
                   runAsUser: 0           # Run as root user to access Docker socket
