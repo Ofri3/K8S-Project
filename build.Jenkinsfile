@@ -51,9 +51,9 @@ pipeline {
             }
         }
         stage('Build Docker Image') {
-            // Ensure Docker commands run in the jenkins-agent container
-            container('jenkins-agent-cont') {
                 steps {
+                    // Ensure Docker commands run in the jenkins-agent container
+                    container('jenkins-agent-cont') {
                     // Build Docker image using docker-compose
                     sh """
                         docker-compose -f ${DOCKER_COMPOSE_FILE} build
