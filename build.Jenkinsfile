@@ -1,6 +1,5 @@
 pipeline {
     agent {
-        // Use the Kubernetes pod template for the agent
         kubernetes {
             yaml """
             apiVersion: v1
@@ -8,13 +7,29 @@ pipeline {
             spec:
               containers:
               - name: jenkins-agent-cont
-                image: ofriz/k8sproject:jenkins-agent-latest
+                image: image: ofriz/k8sproject:jenkins-agent-latest
                 securityContext:
                   privileged: true       # Enable privileged mode for Docker
                   runAsUser: 0           # Run as root user to access Docker socket
                 command:
-                - cat
+                - sh
+                - -c
+                - |
+                  git config --global --add safe.directory /home/jenkins/agent/workspace/kubernetes-project-pipeline
+                  cat
                 tty: true
+                volumeMounts:
+                - mountPath: /var/run/docker.sock
+                  name: docker-sock
+                - mountPath: /home/jenkins/agent
+                  name: workspace-volume
+              volumes:
+              - hostPath:
+                  path: /var/run/docker.sock
+                name: docker-sock
+              - emptyDir:
+                  medium: ""
+                name: workspace-volume
             """
         }
     }
@@ -55,12 +70,18 @@ pipeline {
         }
         stage('Build Docker Image') {
             steps {
-                    // Ensure Docker commands run in the jenkins-agent container
-                    container('jenkins-agent-cont') {
-                    // Build Docker image using docker-compose
-                    sh """
-                        docker-compose -f ${DOCKER_COMPOSE_FILE} build
-                    """
+                container('jenkins-agent-cont') {
+                    script {
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                            echo "Checking Docker installation"
+                            sh 'docker --version || echo "Docker command failed"'
+                            // Ensure Docker commands run in the jenkins-agent container
+                            // Build Docker image using docker-compose
+                            sh """
+                                docker-compose -f ${DOCKER_COMPOSE_FILE} build
+                            """
+                        }
+                    }
                 }
             }
         }
