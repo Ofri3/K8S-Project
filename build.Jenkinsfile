@@ -51,11 +51,14 @@ pipeline {
             }
         }
         stage('Build Docker Image') {
-            steps {
-                // Build Docker image using docker-compose
-                sh """
-                    docker-compose -f ${DOCKER_COMPOSE_FILE} build
-                """
+            // Ensure Docker commands run in the jenkins-agent container
+            container('jenkins-agent-cont') {
+                steps {
+                    // Build Docker image using docker-compose
+                    sh """
+                        docker-compose -f ${DOCKER_COMPOSE_FILE} build
+                    """
+                }
             }
         }
         stage('Install Python Requirements') {
