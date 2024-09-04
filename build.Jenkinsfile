@@ -54,8 +54,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                    sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} build'
-                    }
-                }
             }
         }
         stage('Install Python Requirements') {
