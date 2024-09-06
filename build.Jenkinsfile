@@ -7,13 +7,29 @@ pipeline {
             spec:
               containers:
               - name: jenkins-agent
-                image: ofriz/k8sproject:jenkins-agent-latest
+                image: denisber1984/jenkins-agent:helm-kubectl
                 securityContext:
                   privileged: true       # Enable privileged mode for Docker
                   runAsUser: 0           # Run as root user to access Docker socket
                 command:
-                - cat
+                - sh
+                - -c
+                - |
+                  git config --global --add safe.directory /home/jenkins/agent/workspace/kubernetes-project-pipeline
+                  cat
                 tty: true
+                volumeMounts:
+                - mountPath: /var/run/docker.sock
+                  name: docker-sock
+                - mountPath: /home/jenkins/agent
+                  name: workspace-volume
+              volumes:
+              - hostPath:
+                  path: /var/run/docker.sock
+                name: docker-sock
+              - emptyDir:
+                  medium: ""
+                name: workspace-volume
             '''
         }
     }
