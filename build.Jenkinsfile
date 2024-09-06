@@ -1,13 +1,14 @@
 pipeline {
     agent {
         kubernetes {
-            yaml '''
+            yaml """
             apiVersion: v1
             kind: Pod
             spec:
+              serviceAccountName: jenkins-admin  # Ensure Jenkins is using the correct service account
               containers:
               - name: jenkins-agent
-                image: denisber1984/jenkins-agent:helm-kubectl
+                image: ofriz/k8sproject:jenkins-ag
                 securityContext:
                   privileged: true       # Enable privileged mode for Docker
                   runAsUser: 0           # Run as root user to access Docker socket
@@ -30,7 +31,7 @@ pipeline {
               - emptyDir:
                   medium: ""
                 name: workspace-volume
-            '''
+            """
         }
     }
 
