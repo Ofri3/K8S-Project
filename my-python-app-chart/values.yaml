@@ -1,14 +1,9 @@
-replicaCount: 3
+replicaCount: 2
 
 image:
   repository: ofriz/k8sproject
   tag: app-image-latest
   pullPolicy: IfNotPresent
-
-service:
-  type: ClusterIP
-  port: 80
-  targetPort: 8444
 
 resources:
   limits:

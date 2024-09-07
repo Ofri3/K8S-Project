@@ -21,11 +21,11 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
           - name: http
-            containerPort: {{ .Values.service.targetPort }}
+            containerPort: 8443
             protocol: TCP
         env:
           - name: TELEGRAM_TOKEN
             valueFrom:
               secretKeyRef:
-                name: { { .Values.env.TELEGRAM_TOKEN_SECRET } }
+                name: {{ .Values.env.TELEGRAM_TOKEN_SECRET }}
                 key: TELEGRAM_TOKEN
