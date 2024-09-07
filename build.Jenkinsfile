@@ -8,7 +8,7 @@ pipeline {
               serviceAccountName: jenkins-admin  # Ensure Jenkins is using the correct service account
               containers:
               - name: jenkins-agent
-                image: ofriz/k8sproject:jenkins-agent-1.0
+                image: ofriz/k8sproject:jenkins-agent-1.1
                 securityContext:
                   privileged: true       # Enable privileged mode for Docker
                   runAsUser: 0           # Run as root user to access Docker socket
@@ -73,6 +73,8 @@ pipeline {
             steps {
                 // Install Python dependencies
                 sh """
+                    python3 -m venv venv
+                    source venv/bin/activate
                     pip install --upgrade pip
                     pip install pytest unittest2 pylint flask telebot Pillow loguru matplotlib
                 """
