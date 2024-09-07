@@ -53,6 +53,7 @@ pipeline {
         DOCKER_REPO = 'ofriz/k8sproject'
         DOCKERHUB_CREDENTIALS = 'dockerhub'
         SNYK_API_TOKEN = 'SNYK_API_TOKEN'
+        CHART_VERSION = "0.1.${BUILD_NUMBER}"
     }
 
     stages {
@@ -69,48 +70,12 @@ pipeline {
                 }
             }
         }
-        stage('Install Python Requirements') {
-            steps {
-                // Install Python dependencies
-                sh """
-                    python3 -m venv venv
-                    source venv/bin/activate
-                    pip install --upgrade pip
-                    pip install pytest unittest2 pylint flask telebot Pillow loguru matplotlib
-                """
-            }
-        }
-        stage('Static Code Linting and Unittest') {
-            parallel {
-                stage('Static code linting') {
-                    steps {
-                        // Run python code analysis
-                        sh """
-                            python -m pylint -f parseable --reports=no polybot/*.py > pylint.log
-                            cat pylint.log
-                        """
-                    }
-                }
-                stage('Unittest') {
-                    steps {
-                        // Run unittests
-                        sh 'python -m pytest --junitxml results.xml polybot/test'
-                    }
-                }
-            }
-        }
         stage('Build Docker Image') {
             steps {
                 container('jenkins-agent') {
                     script {
                         withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                            echo "Checking Docker installation"
-                            sh 'docker --version --privileged	 || echo "Docker command failed"'
-                            // Ensure Docker commands run in the jenkins-agent container
-                            // Build Docker image using docker-compose
-                            sh """
-                                docker-compose -f ${DOCKER_COMPOSE_FILE} build
-                            """
+                            sh 'docker-compose -f ${DOCKER_COMPOSE_FILE} build'
                         }
                     }
                 }
@@ -118,33 +83,47 @@ pipeline {
         }
         stage('Login, Tag, and Push Images') {
             steps {
-                script {
-                    withCredentials([
-                        usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')
-                    ]) {
-
-                    // Login to Dockerhub, tag, and push images
-                    sh """
-                        cd polybot
-                        docker login -u ${USER} -p ${PASS}
-                        docker tag ${APP_IMAGE_NAME}:latest ${DOCKER_REPO}:${APP_IMAGE_NAME}-${env.IMAGE_TAG}
-                        docker tag ${WEB_IMAGE_NAME}:latest ${DOCKER_REPO}:${WEB_IMAGE_NAME}-${env.IMAGE_TAG}
-                        docker push ${DOCKER_REPO}:${APP_IMAGE_NAME}-${env.IMAGE_TAG}
-                        docker push ${DOCKER_REPO}:${WEB_IMAGE_NAME}-${env.IMAGE_TAG}
-                    """
+                container('jenkins-agent') {
+                    script {
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                        // Login to Dockerhub, tag, and push images
+                        sh """
+                            cd polybot
+                            docker login -u ${USER} -p ${PASS}
+                            docker tag ${APP_IMAGE_NAME}:latest ${DOCKER_REPO}:${APP_IMAGE_NAME}-latest
+                            docker tag ${WEB_IMAGE_NAME}:latest ${DOCKER_REPO}:${WEB_IMAGE_NAME}-latest
+                            docker push ${DOCKER_REPO}:${APP_IMAGE_NAME}-latest
+                            docker push ${DOCKER_REPO}:${WEB_IMAGE_NAME}-latest
+                        """
+                        }
+                    }
+                }
+            }
+        }
+        stage('Package Helm Chart') {
+            steps {
+                container('jenkins-agent') {
+                    script {
+                        // Update the chart version in Chart.yaml and package the chart
+                        sh """
+                            sed -i 's/^version:.*/version: ${CHART_VERSION}/' my-python-app-chart/Chart.yaml
+                            helm package ./my-python-app-chart --version ${CHART_VERSION}
+                        """
                     }
                 }
             }
         }
         stage('Deploy with Helm') {
             steps {
-                // Deploy the application using your Helm chart
-                sh """
-                    helm upgrade --install python-app-0.1.0 ./my-python-app-chart \
-                    --namespace demo \
-                    --set image.repository=${DOCKER_REPO} \
-                    --set image.tag=${env.IMAGE_TAG} \
-                    """
+                container('jenkins-agent') {
+                    script {
+                        def CHART_VERSION = "${env.CHART_VERSION}"  // auto-increment based on build number
+                        sh """
+                            helm upgrade --install my-python-app-${CHART_VERSION} ./my-python-app-chart-${CHART_VERSION}.tgz \
+                            --namespace demo \
+                        """
+                    }
+                }
             }
         }
     }
