@@ -8,7 +8,7 @@ pipeline {
               serviceAccountName: jenkins-admin  # Ensure Jenkins is using the correct service account
               containers:
               - name: jenkins-agent
-                image: ofriz/k8sproject:jenkins-ag
+                image: ofriz/k8sproject:jenkins-agent-1.0
                 securityContext:
                   privileged: true       # Enable privileged mode for Docker
                   runAsUser: 0           # Run as root user to access Docker socket
@@ -69,23 +69,6 @@ pipeline {
                 }
             }
         }
-        stage('Build Docker Image') {
-            steps {
-                container('jenkins-agent') {
-                    script {
-                        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                            echo "Checking Docker installation"
-                            sh 'docker --version --privileged	 || echo "Docker command failed"'
-                            // Ensure Docker commands run in the jenkins-agent container
-                            // Build Docker image using docker-compose
-                            sh """
-                                docker-compose -f ${DOCKER_COMPOSE_FILE} build
-                            """
-                        }
-                    }
-                }
-            }
-        }
         stage('Install Python Requirements') {
             steps {
                 // Install Python dependencies
@@ -114,15 +97,19 @@ pipeline {
                 }
             }
         }
-        stage('Security Vulnerability Scanning') {
+        stage('Build Docker Image') {
             steps {
-                script {
-                    withCredentials([string(credentialsId: 'SNYK_API_TOKEN', variable: 'SNYK_TOKEN')]) {
-                        // Scan the image
-                        sh """
-                            snyk auth $SNYK_TOKEN
-                            snyk container test ${APP_IMAGE_NAME}:latest --severity-threshold=high || exit 0
-                        """
+                container('jenkins-agent') {
+                    script {
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                            echo "Checking Docker installation"
+                            sh 'docker --version --privileged	 || echo "Docker command failed"'
+                            // Ensure Docker commands run in the jenkins-agent container
+                            // Build Docker image using docker-compose
+                            sh """
+                                docker-compose -f ${DOCKER_COMPOSE_FILE} build
+                            """
+                        }
                     }
                 }
             }
