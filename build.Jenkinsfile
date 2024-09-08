@@ -107,7 +107,7 @@ pipeline {
                         // Update the chart version in Chart.yaml and package the chart
                         sh """
                             sed -i 's/^version:.*/version: ${CHART_VERSION}/' my-python-app-chart/Chart.yaml
-                            helm package ./my-python-app-chart --version ${CHART_VERSION}
+                            helm package ./my-python-app-chart
                         """
                     }
                 }
@@ -119,7 +119,7 @@ pipeline {
                     script {
                         def CHART_VERSION = "${env.CHART_VERSION}"  // auto-increment based on build number
                         sh """
-                            helm upgrade --install my-python-app-${CHART_VERSION} ./my-python-app-chart-${CHART_VERSION}.tgz \
+                            helm upgrade --install my-python-app ./my-python-app-${CHART_VERSION}.tgz \
                             --namespace demo \
                         """
                     }
