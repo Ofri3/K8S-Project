@@ -5,7 +5,7 @@ metadata:
   namespace: demo
 subjects:
 - kind: ServiceAccount
-  name: jenkins
+  name: jenkins-admin
   namespace: jenkins
 roleRef:
   kind: Role
