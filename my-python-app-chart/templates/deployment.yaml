@@ -1,31 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "my-python-app.fullname" . }}
+  name: {{ .Values.name }}
   namespace: {{ .Values.namespace }}  # Pull the namespace from values.yaml
-  labels:
-    app: {{ include "my-python-app.name" . }}
 spec:
   replicas: {{ .Values.replicaCount }}  # Number of replicas from values.yaml
   selector:
     matchLabels:
-      app: {{ include "my-python-app.name" . }}
+      app: {{ .Values.name }}  # Match labels with the template labels
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 25%
+      maxSurge: 25%
   template:
     metadata:
       labels:
-        app: {{ include "my-python-app.name" . }}
+        app: {{ .Values.name }}
     spec:
       containers:
-      - name: my-python-app
-        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}  # Image and tag from values.yaml
-        imagePullPolicy: {{ .Values.image.pullPolicy }}
-        ports:
-          - name: http
-            containerPort: 8443
-            protocol: TCP
-        env:
-          - name: TELEGRAM_TOKEN
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.env.TELEGRAM_TOKEN_SECRET }}
-                key: TELEGRAM_TOKEN
+        - name: my-python-app
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }} # Image and tag from values.yaml
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8443
+              protocol: TCP
+          env:
+            - name: TELEGRAM_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.env.TELEGRAM_TOKEN_SECRET }}
+                  key: TELEGRAM_TOKEN

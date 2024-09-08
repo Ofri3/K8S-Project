@@ -120,7 +120,8 @@ pipeline {
                         def CHART_VERSION = "${env.CHART_VERSION}"  // auto-increment based on build number
                         sh """
                             helm upgrade --install my-python-app ./my-python-app-${CHART_VERSION}.tgz \
-                            --namespace demo \
+                            --atomic --wait \
+                            --namespace jenkins \
                         """
                     }
                 }

@@ -1,3 +1,5 @@
+name: my-python-app
+namespace: demo
 replicaCount: 2
 
 image:
@@ -30,9 +32,6 @@ pvc:
   storage: 1Gi
 ingress:
   host: nginx.local
-
-namespace:
-  name: demo
 
 env:
   TELEGRAM_TOKEN_SECRET: telegram-token-secret
