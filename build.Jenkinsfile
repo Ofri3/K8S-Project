@@ -54,6 +54,7 @@ pipeline {
         DOCKERHUB_CREDENTIALS = 'dockerhub'
         SNYK_API_TOKEN = 'SNYK_API_TOKEN'
         CHART_VERSION = "0.1.${BUILD_NUMBER}"
+        KUBECONFIG = "${env.WORKSPACE}/.kube/config"
     }
 
     stages {
@@ -117,12 +118,35 @@ pipeline {
             steps {
                 container('jenkins-agent') {
                     script {
-                        def CHART_VERSION = "${env.CHART_VERSION}"  // auto-increment based on build number
-                        sh """
-                            helm upgrade --install my-python-app ./my-python-app-${CHART_VERSION}.tgz \
-                            --atomic --wait \
-                            --namespace jenkins \
-                        """
+                        withEnv(["KUBECONFIG=${env.KUBECONFIG}"]) {
+                            def CHART_VERSION = "${env.CHART_VERSION}"  // auto-increment based on build number
+                            sh """
+                                helm upgrade --install my-python-app ./my-python-app-${CHART_VERSION}.tgz \
+                                --atomic --wait \
+                                --namespace jenkins \
+                            """
+                        }
+                    }
+                }
+            }
+        }
+        // Stage 4: Apply or Update ArgoCD Application
+        stage('Create/Update ArgoCD Application') {
+            steps {
+                container('jenkins-agent') {
+                    script {
+                        // Make sure 'application.yaml' is in the 'argocd-config' folder
+                        sh 'kubectl apply -f argocd-config/app.yaml -n argocd'
+                    }
+                }
+            }
+        }
+        // Stage 5: Sync ArgoCD Application
+        stage('Sync ArgoCD Application') {
+            steps {
+                container('jenkins-agent') {
+                    script {
+                        sh 'kubectl -n argocd patch application my-python-app --type merge -p \'{"metadata": {"annotations": {"argocd.argoproj.io/sync-wave": "-1"}}}\''
                     }
                 }
             }
