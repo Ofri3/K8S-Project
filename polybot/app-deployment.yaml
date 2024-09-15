@@ -5,7 +5,7 @@ metadata:
   labels:
     app: python-app
 spec:
-  replicas: 2  # Number of replicas for the Python app deployment
+  replicas: 3  # Number of replicas for the Python app deployment
   selector:
     matchLabels:
       app: python-app
@@ -18,9 +18,12 @@ spec:
       - name: python-app
         image: ofriz/k8sproject:app-image-latest  # Replace with your actual Python app image
         ports:
-        - containerPort: 8443  # Assuming your Python app runs on port 5000
+        - containerPort: 8443  # Assuming your Python app runs on port 8443
         env:
-        - name: ENV_VARIABLE_NAME
-          value: "some-value"  # Replace with any environment variables needed
+        - name: TELEGRAM_TOKEN  # This should match the environment variable used in your app.py
+          valueFrom:
+            secretKeyRef:
+              name: telegram-token-secret  # Name of the Kubernetes Secret
+              key: TELEGRAM_TOKEN        # The key in the secret that holds the Telegram token
       imagePullSecrets:
-      - name: regcred
+      - name: regcred  # Assuming you have an image pull secret for private Docker registry
