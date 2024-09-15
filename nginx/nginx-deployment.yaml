@@ -5,7 +5,7 @@ metadata:
   labels:
     app: nginx
 spec:
-  replicas: 3  # Number of replicas for the Nginx deployment
+  replicas: 2  # Number of replicas for the Nginx deployment
   selector:
     matchLabels:
       app: nginx
