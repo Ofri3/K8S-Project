@@ -1,6 +1,6 @@
 name: my-python-app
 namespace: demo
-replicaCount: 1
+replicaCount: 2
 
 image:
   repository: ofriz/k8sproject
