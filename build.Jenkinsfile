@@ -5,7 +5,7 @@ pipeline {
             apiVersion: v1
             kind: Pod
             spec:
-              serviceAccountName: jenkins-admin  # Ensure Jenkins is using the correct service account
+              serviceAccountName: jenkins  # Ensure Jenkins is using the correct service account
               containers:
               - name: jenkins-agent
                 image: ofriz/k8sproject:jenkins-agent-1.1
@@ -46,7 +46,6 @@ pipeline {
 
     environment {
         // Define environment variables
-        TELEGRAM_TOKEN = credentials('TELEGRAM_TOKEN')
         APP_IMAGE_NAME = 'app-image'
         WEB_IMAGE_NAME = 'web-image'
         DOCKER_COMPOSE_FILE = 'compose.yaml'
@@ -140,7 +139,6 @@ pipeline {
                 }
             }
         }
-        // Stage 4: Apply or Update ArgoCD Application
         stage('Create/Update ArgoCD Application') {
             steps {
                 container('jenkins-agent') {
@@ -151,7 +149,6 @@ pipeline {
                 }
             }
         }
-        // Stage 5: Sync ArgoCD Application
         stage('Sync ArgoCD Application') {
             steps {
                 container('jenkins-agent') {
