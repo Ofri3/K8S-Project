@@ -52,22 +52,32 @@ pipeline {
         DOCKER_COMPOSE_FILE = 'compose.yaml'
         DOCKER_REPO = 'ofriz/k8sproject'
         DOCKERHUB_CREDENTIALS = 'dockerhub'
-        SNYK_API_TOKEN = 'SNYK_API_TOKEN'
         CHART_VERSION = "0.1.${BUILD_NUMBER}"
         KUBECONFIG = "${env.WORKSPACE}/.kube/config"
     }
 
     stages {
-        stage('Extract Git Commit Hash') {
+        stage('Install Python Requirements') {
             steps {
-                // Extract Git commit hash
-                script {
-                    sh(script: 'git rev-parse --short HEAD > gitCommit.txt')
-                    def GITCOMMIT = readFile('gitCommit.txt').trim()
-                    env.GIT_TAG = "${GITCOMMIT}"
-
-                    // Set IMAGE_TAG as an environment variable
-                    env.IMAGE_TAG = "v1.0.0-${BUILD_NUMBER}-${GIT_TAG}"
+                container('jenkins-agent') {
+                    // Install Python dependencies
+                    sh """
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install pytest unittest2 pylint flask telebot Pillow loguru matplotlib
+                    """
+                }
+            }
+        }
+        stage('Unittest') {
+            steps {
+                container('jenkins-agent') {
+                    // Run unittests
+                    sh """
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        python -m pytest --junitxml results.xml polybot/test
+                    """
                 }
             }
         }
@@ -135,7 +145,7 @@ pipeline {
             steps {
                 container('jenkins-agent') {
                     script {
-                        // Make sure 'application.yaml' is in the 'argocd-config' folder
+                        // Make sure 'app.yaml' is in the 'argocd-config' folder
                         sh 'kubectl apply -f argocd-config/app.yaml -n argocd'
                     }
                 }
